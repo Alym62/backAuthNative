@@ -36,6 +36,7 @@ public class AuthController {
         var user = new Usuario();
         user.setUsername(usuarioDTO.getUsername());
         user.setPassword(passwordEncoder.encode(usuarioDTO.getUsername()));
+        user.setRoles(usuarioDTO.getRoles());
 
         usuarioService.registrarUsuario(user);
         return ResponseEntity.ok().build();

@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtEntryPoint))
                 .authorizeHttpRequests(authorize -> authorize.requestMatchers("api/v1/auth/**").permitAll()
+                        .requestMatchers("api/v1/test").hasAuthority(Role.ADMIN.toString())
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
