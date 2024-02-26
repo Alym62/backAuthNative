@@ -1,8 +1,6 @@
 package org.auth.facul.config.security;
 
-import org.auth.facul.config.jwt.JwtEntryPoint;
-import org.auth.facul.config.jwt.JwtRequestFilter;
-import org.auth.facul.entity.enums.Role;
+import org.auth.facul.config.securityFilter.SecurityFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,7 +9,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -20,18 +17,31 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final JwtEntryPoint jwtEntryPoint;
+    private final SecurityFilter securityFilter;
 
-    private final JwtRequestFilter jwtRequestFilter;
+    public SecurityConfig(SecurityFilter securityFilter) {
+        this.securityFilter = securityFilter;
+    }
 
-    public SecurityConfig(JwtEntryPoint jwtEntryPoint, JwtRequestFilter jwtRequestFilter) {
-        this.jwtEntryPoint = jwtEntryPoint;
-        this.jwtRequestFilter = jwtRequestFilter;
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
+                .authorizeHttpRequests(authorize ->
+                        authorize.requestMatchers(POST,"/api/v1/auth/**").permitAll()
+                        .requestMatchers(GET,"/api/v1/test/admin").hasRole("ADMIN")
+                        .requestMatchers(GET,"/api/v1/test/user").hasRole("USER")
+                        .anyRequest().authenticated())
+                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
     }
 
     @Bean
@@ -40,21 +50,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
-                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtEntryPoint))
-                .authorizeHttpRequests(authorize -> authorize.requestMatchers("api/v1/auth/**").permitAll()
-                        .requestMatchers("api/v1/test").hasAuthority(Role.ADMIN.toString())
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
-                .build();
     }
 
     @Bean

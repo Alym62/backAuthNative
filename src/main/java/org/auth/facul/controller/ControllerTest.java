@@ -7,8 +7,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("api/v1/test")
 public class ControllerTest {
-    @GetMapping
-    public String getTest() {
-        return "Hello world";
+    @GetMapping("/admin")
+    public String getTestRoleAdmin() {
+        return "Hello world admin";
+    }
+
+    @GetMapping("/user")
+    public String getTestRoleUser() {
+        return "Hello world user";
     }
 }
